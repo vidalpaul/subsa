@@ -46,7 +46,7 @@ pub type AssetId = u64;
 
 💂 Transaction authorizer: any account with sufficient Algo balance.
 
-Note that for every asset an account creates or owns, its minimum balance is increased by 0.1 Algos (100,000 microAlgos)
+Note that for every asset an account creates or owns, its minimum balance is increased by 0.1 Algos (100,000 microAlgos).
 
 ##### Asset Creation Transaction
 
@@ -309,7 +309,7 @@ pub struct Destruction {
 - [Algorand ASA Standard](https://developer.algorand.org/docs/get-details/asa/)
 - [ink!](https://use.ink/)
 
-## Testing
+## Testing 🧪
 
 ### Cargo unit tests
 
@@ -318,6 +318,68 @@ cargo test
 ```
 
 ### Testing in Rococo testnet
+
+Rococo is a testnet for Polkadot and Kusama parachains. We have a live testnet named Contracts as a parachain online there. You can test SSA contract on Contracts parachain.
+
+#### Steps
+
+1. Create an account. This can be done via command-line tools (e.g. subxt) or via a wallet (e.g. with the polkadot-js browser extension). See [here](https://wiki.polkadot.network/docs/learn-account-generation) for a detailed guide.
+
+2. Get some testnet tokens. You can get some testnet tokens from the [faucet](https://use.ink/faucet).
+
+Alternatively, you can use the [Element chat room](https://wiki.polkadot.network/docs/learn-DOT#getting-tokens-on-the-rococo-testnet). You must send a message like this (Note the :1002 after the wallet address):
+
+```
+!drip YOUR_SS_58_ADDRESS:1002
+```
+
+The number 1002 is the parachain ID of Contracts on Rococo, by supplying it you instruct the faucet to teleport ROC tokens directly to your account on the parachain. If you have some tokens on the Rococo relay chain, you can teleport them to the Contracts parachain on your own. Read more on teleporting assets [here](https://wiki.polkadot.network/docs/learn-teleport).
+
+3. Deploy SSA contract. You can deploy the contract via the [Contracts UI](https://use.ink/testnet#3-deploy-your-contract) or from the command-line via `cargo-contract`. Make sure you are in the folder of your contract and that it has been built recently. Then execute:
+
+```bash
+cargo contract upload --suri "your twelve or twenty-four words"
+cargo contract instantiate --suri … --constructor new --args true
+```
+
+`new` in this case would be a constructor method exposed by the contract, `--args` would be any arguments the constructor expects.
+
+##### --args
+
+```rust
+#[ink(constructor)]
+        pub fn new(
+            asset_name: String,
+            unit_name: String,
+            total: Balance,
+            decimals: u32,
+            default_frozen: bool,
+            url: String,
+            metadata_hash: [u8; 4],
+            manager: Option<AccountId>,
+            reserve: Option<AccountId>,
+            freeze: Option<AccountId>,
+            clawback: Option<AccountId>,
+        ) -> Self {
+            Self {
+                creator: Self::env().caller(),
+                asset_name,
+                unit_name,
+                total,
+                decimals,
+                default_frozen,
+                url,
+                metadata_hash,
+                manager: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                reserve: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                freeze: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                clawback: clawback.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                all_holders: Mapping::default(),
+                accounts_opted_in: Mapping::default(),
+                frozen_holders: Mapping::default(),
+            }
+        }
+```
 
 - [Rococo testnet](hhttps://wiki.polkadot.network/docs/build-pdk#rococo-testnet)
 - [Testnet faucet](https://use.ink/faucet)
