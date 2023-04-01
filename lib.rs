@@ -8,7 +8,7 @@ mod ssa {
 
     use scale::{Decode, Encode};
 
-    pub type AssetId = u32;
+    pub type AssetId = u64;
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order

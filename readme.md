@@ -8,6 +8,10 @@ SSA is a asset tokenization standard for Substrate, based on and aims to be full
 
 The ASA ID is a 64-bit unsigned integer. The ASA ID is used to identify the ASA in the Algorand network.
 
+```rust
+pub type AssetId = u64;
+```
+
 ### ASA Parameters
 
 #### ASA Immutable Parameters
@@ -44,35 +48,277 @@ The ASA ID is a 64-bit unsigned integer. The ASA ID is used to identify the ASA 
 
 Note that for every asset an account creates or owns, its minimum balance is increased by 0.1 Algos (100,000 microAlgos)
 
+##### Asset Creation Transaction
+
+```rust
+pub struct AssetCreationTransaction {
+    /// The total number of units of this asset.
+    pub total: u64,
+    /// The number of digits to use after the decimal point when displaying this asset.
+    pub decimals: u8,
+    /// Whether users of this asset must opt in before holding or sending.
+    pub default_frozen: bool,
+    /// The name of this asset.
+    pub unit_name: String,
+    /// The full name of this asset.
+    pub asset_name: String,
+    /// A URL where more information about the asset can be retrieved.
+    pub url: String,
+    /// A commitment to some unspecified asset metadata.
+    pub metadata_hash: String,
+    /// The address that can change the reserve, freeze, clawback, and manager addresses of the asset.
+    pub manager: AccountId,
+    /// The address that holds reserve (non-minted) units of the asset.
+    pub reserve: AccountId,
+    /// The address that can freeze or unfreeze user asset holdings.
+    pub freeze: AccountId,
+    /// The address that can revoke user asset holdings and send them to other addresses.
+    pub clawback: AccountId,
+}
+```
+
+##### Asset Creation Event
+
+```rust
+#[ink(event)]
+pub struct Creation {
+    #[ink(topic)]
+    asset_id: AssetId,
+    #[ink(topic)]
+    asset_name: String,
+    #[ink(topic)]
+    creator: AccountId,
+    #[ink(topic)]
+    total: Balance,
+}
+```
+
 #### Modifying an Asset
 
 💂 Transaction authorizer: the asset manager.
+
+##### Asset Modification Transaction
+
+```rust
+pub struct AssetModificationTransaction {
+    /// The address that can change the reserve, freeze, clawback, and manager addresses of the asset.
+    pub manager: Option<AccountId>,
+    /// The address that holds reserve (non-minted) units of the asset.
+    pub reserve: Option<AccountId>,
+    /// The address that can freeze or unfreeze user asset holdings.
+    pub freeze: Option<AccountId>,
+    /// The address that can revoke user asset holdings and send them to other addresses.
+    pub clawback: Option<AccountId>,
+}
+```
+
+##### Asset Modification Event
+
+```rust
+#[ink(event)]
+pub struct Modification {
+    #[ink(topic)]
+    asset_id: AssetId,
+    #[ink(topic)]
+    manager: Option<AccountId>,
+    #[ink(topic)]
+    reserve: Option<AccountId>,
+    #[ink(topic)]
+    freeze: Option<AccountId>,
+    #[ink(topic)]
+    clawback: Option<AccountId>,
+}
+```
 
 #### Opting In to an Asset
 
 💂 Transaction authorizer: any account with sufficient Algo balance.
 
+##### Asset Opt-In Transaction
+
+```rust
+pub struct AssetOptInTransaction {
+    /// The ASA ID of the asset to opt in to.
+    pub asset_id: u64,
+    /// The address to opt in to the asset.
+    pub to: AccountId,
+}
+```
+
+##### Asset Opt-In Event
+
+```rust
+#[ink(event)]
+pub struct OptIn {
+    #[ink(topic)]
+    account: AccountId,
+    #[ink(topic)]
+    asset_id: AssetId,
+}
+```
+
 #### Opting Out of an Asset
 
 💂 Transaction authorizer: any account that has opted in to the asset.
+
+##### Asset Opt-Out Transaction
+
+```rust
+pub struct AssetOptOutTransaction {
+    /// The ASA ID of the asset to opt out of.
+    pub asset_id: u64,
+}
+```
+
+##### Asset Opt-Out Event
+
+```rust
+#[ink(event)]
+pub struct OptOut {
+    #[ink(topic)]
+    account: AccountId,
+    #[ink(topic)]
+    asset_id: AssetId,
+}
+```
 
 #### Transferring an Asset
 
 💂 Transaction authorizer: any account that has opted in to the asset and has sufficient (not-frozen) ASA balance plus ALGO balance to pay for transaction fee, plus the clawback address if the asset is frozen for the sender.
 
-#### Freezing an Asset
+##### Asset Transfer Transaction
+
+```rust
+pub struct AssetTransferTransaction {
+    /// The ASA ID of the asset to transfer.
+    pub asset_id: u64,
+    /// The address to transfer the asset to.
+    pub to: AccountId,
+    /// The amount of the asset to transfer.
+    pub amount: u64,
+    /// The address to transfer the asset from.
+    pub from: AccountId,
+}
+```
+
+##### Asset Transfer Event
+
+```rust
+#[ink(event)]
+pub struct Transfer {
+    #[ink(topic)]
+    sender: AccountId,
+    #[ink(topic)]
+    receiver: AccountId,
+    #[ink(topic)]
+    asset_id: AssetId,
+    #[ink(topic)]
+    amount: Option<Balance>,
+}
+```
+
+#### Freezing (and Unfreezing) an Asset
 
 💂 Transaction authorizer: the asset freeze address.
+
+##### Asset Freeze Transaction
+
+```rust
+pub struct AssetFreezeTransaction {
+    /// The ASA ID of the asset to freeze.
+    pub asset_id: u64,
+    /// The address to freeze the asset for.
+    pub account: AccountId,
+    /// Whether to freeze or unfreeze the asset.
+    pub freeze: bool,
+}
+```
+
+##### Asset Freeze Event
+
+```rust
+#[ink(event)]
+pub struct Freeze {
+    #[ink(topic)]
+    account: AccountId,
+    #[ink(topic)]
+    asset_id: AssetId,
+    #[ink(topic)]
+    freeze: bool,
+}
+```
 
 #### Revoking an Asset
 
 💂 Transaction authorizer: the asset clawback address.
 
+##### Asset Revoke Transaction
+
+```rust
+pub struct AssetRevokeTransaction {
+    /// The ASA ID of the asset to revoke.
+    pub asset_id: u64,
+    /// The address to revoke the asset from.
+    pub account: AccountId,
+    /// The amount of the asset to revoke.
+    pub amount: u64,
+}
+```
+
+##### Asset Revoke Event
+
+```rust
+#[ink(event)]
+pub struct Revoke {
+    #[ink(topic)]
+    account: AccountId,
+    #[ink(topic)]
+    asset_id: AssetId,
+    #[ink(topic)]
+    amount: Option<Balance>,
+}
+```
+
 #### Destroying an Asset
 
 💂 Transaction authorizer: the asset manager.
+
+##### Asset Destroy Transaction
+
+```rust
+pub struct AssetDestroyTransaction {
+    /// The ASA ID of the asset to destroy.
+    pub asset_id: u64,
+}
+```
+
+##### Asset Destroy Event
+
+```rust
+#[ink(event)]
+pub struct Destruction {
+    #[ink(topic)]
+    asset_id: AssetId,
+    #[ink(topic)]
+    destroyer: AccountId,
+}
+```
 
 ## References
 
 - [Algorand ASA Standard](https://developer.algorand.org/docs/get-details/asa/)
 - [ink!](https://use.ink/)
+
+## Testing
+
+### Cargo unit tests
+
+```bash
+cargo test
+```
+
+### Testing in Rococo testnet
+
+- [Rococo testnet](hhttps://wiki.polkadot.network/docs/build-pdk#rococo-testnet)
+- [Testnet faucet](https://use.ink/faucet)
+- [Contract deployment](https://use.ink/testnet#3-deploy-your-contract)
