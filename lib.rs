@@ -99,13 +99,13 @@ mod subsa {
     #[ink(event)]
     pub struct Modify {
         #[ink(topic)]
-        asset_id: AssetId,
+        manager_id: AccountId,
         #[ink(topic)]
-        reserve: AccountId,
+        reserve_id: AccountId,
         #[ink(topic)]
-        freeze: AccountId,
+        freeze_id: AccountId,
         #[ink(topic)]
-        clawback: AccountId,
+        clawback_id: AccountId,
     }
 
     /// Event emitted when an account opts in to receive an asset.
@@ -298,6 +298,43 @@ mod subsa {
                 account,
                 freeze,
                 freeze_id: self.freezeId,
+            });
+
+            Ok(())
+        }
+
+        // Modify/Reconfigure an asset
+        // Note: only the manager can modify an asset
+        // Note: only mutable asset params can be modified
+        // List of mutable asset params:
+        // - managerId, reserveId, freezeId, clawbackId
+        #[ink(message)]
+        pub fn modify_asset(
+            &mut self,
+            manager: Option<AccountId>,
+            reserve: Option<AccountId>,
+            freeze: Option<AccountId>,
+            clawback: Option<AccountId>,
+        ) -> Result<(), Error> {
+            let caller = self.env().caller();
+
+            // check if caller is the manager
+            if caller != self.managerId {
+                return Err(Error::NotManagerId);
+            }
+
+            // update asset params
+            self.managerId = manager.unwrap_or_else(|| AccountId::from([0x0; 32]));
+            self.reserveId = reserve.unwrap_or_else(|| AccountId::from([0x0; 32]));
+            self.freezeId = freeze.unwrap_or_else(|| AccountId::from([0x0; 32]));
+            self.clawbackId = clawback.unwrap_or_else(|| AccountId::from([0x0; 32]));
+
+            // emit modify asset event
+            self.env().emit_event(Modify {
+                manager_id: self.managerId,
+                reserve_id: self.reserveId,
+                freeze_id: self.freezeId,
+                clawback_id: self.clawbackId,
             });
 
             Ok(())
