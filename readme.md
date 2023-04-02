@@ -1,6 +1,6 @@
-# 💹 Substrate Standard Asset (SSA)
+# 💹 Substrate Standard Asset (subsa)
 
-SSA is an asset tokenization standard for Substrate, based on and aims to be fully compatible with the (ASA standard of Algorand)[https://developer.algorand.org/docs/get-details/asa/].
+subsa is an asset tokenization standard for Substrate, based on and aims to be fully compatible with the (ASA standard of Algorand)[https://developer.algorand.org/docs/get-details/asa/].
 
 ## ASA Specification
 
@@ -319,7 +319,7 @@ cargo test
 
 ### Testing in Rococo testnet
 
-Rococo is a testnet for Polkadot and Kusama parachains. There's a live testnet named Contracts as a parachain online, where you can test the SSA contract.
+Rococo is a testnet for Polkadot and Kusama parachains. There's a live testnet named Contracts as a parachain online, where you can test the subsa contract.
 
 #### Steps
 
@@ -335,7 +335,7 @@ Alternatively, you can use the [Element chat room](https://wiki.polkadot.network
 
 The number 1002 is the parachain ID of Contracts on Rococo, by supplying it you instruct the faucet to teleport ROC tokens directly to your account on the parachain. If you have some tokens on the Rococo relay chain, you can teleport them to the Contracts parachain on your own. Read more on teleporting assets [here](https://wiki.polkadot.network/docs/learn-teleport).
 
-3. Deploy SSA contract. You can deploy the contract via the [Contracts UI](https://use.ink/testnet#3-deploy-your-contract) or from the command-line via `cargo-contract`. Make sure you are in the folder of your contract and that it has been built recently. Then execute:
+3. Deploy subsa contract. You can deploy the contract via the [Contracts UI](https://use.ink/testnet#3-deploy-your-contract) or from the command-line via `cargo-contract`. Make sure you are in the folder of your contract and that it has been built recently. Then execute:
 
 ```bash
 cargo contract upload --suri "your twelve or twenty-four words"

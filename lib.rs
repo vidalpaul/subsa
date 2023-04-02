@@ -2,21 +2,22 @@
 
 use ink_lang as ink;
 
-// SSA smart contract
+// subsa smart contract
 #[ink::contract]
-mod ssa {
+mod subsa {
     use ink_storage::{traits::SpreadAllocate, Mapping};
 
     use scale::{Decode, Encode};
 
-    pub type AssetId = u64;
+    pub type AssetId = AccountId;
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
     #[ink(storage)]
-    pub struct Ssa {
+    pub struct Subsa {
         // immutable asset params
+        asset_id: AssetId,
         creator: AccountId,
         asset_name: String,
         unit_name: String,
@@ -30,7 +31,7 @@ mod ssa {
         reserve: AccountId,
         freeze: AccountId,
         clawback: AccountId,
-        all_holders: Mapping<AccountId, u32>,
+        all_holders: Mapping<AccountId, Balance>,
         accounts_opted_in: Mapping<AccountId, bool>,
         frozen_holders: Mapping<AccountId, u32>,
     }
@@ -148,7 +149,7 @@ mod ssa {
         destroyer: AccountId,
     }
 
-    impl Ssa {
+    impl Subsa {
         #[ink(constructor)]
         pub fn new(
             asset_name: String,
@@ -172,6 +173,7 @@ mod ssa {
                 default_frozen,
                 url,
                 metadata_hash,
+                asset_id: Self::env().account_id(),
                 manager: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
                 reserve: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
                 freeze: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
@@ -182,9 +184,40 @@ mod ssa {
             }
         }
 
-        /// A message that returns all the data of the asset.
+        /// Transfer `amount` of tokens from `sender` to `receiver`.
         #[ink(message)]
-        pub fn transfer_from(&mut self) {}
+        pub fn transfer(&mut self, receiver: AccountId, amount: Balance) -> Result<(), Error> {
+            let sender = self.env().caller();
+
+            // check if sender has enough balance
+            let sender_balance = self.all_holders.get(&sender).unwrap_or(0);
+            if sender_balance < amount {
+                return Err(Error::NotEnoughBalance);
+            }
+
+            // check if receiver has opted in
+            let receiver_opted_in = self.accounts_opted_in.get(&receiver).unwrap_or(false);
+            if !receiver_opted_in {
+                return Err(Error::NotOptedIn);
+            }
+
+            // update sender and receiver balances
+            self.all_holders.insert(&sender, &(sender_balance - amount));
+            self.all_holders.insert(
+                &receiver,
+                &(self.all_holders.get(&receiver).unwrap_or(0) + amount),
+            );
+
+            // emit transfer event
+            self.env().emit_event(Transfer {
+                sender,
+                receiver,
+                asset_id: self.asset_id,
+                amount: Some(amount),
+            });
+
+            Ok(())
+        }
     }
 
     /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
