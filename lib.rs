@@ -27,26 +27,28 @@ mod subsa {
         url: String,
         metadata_hash: [u8; 4],
         // mutable asset params
-        manager: AccountId,
-        reserve: AccountId,
-        freeze: AccountId,
-        clawback: AccountId,
-        all_holders: Mapping<AccountId, Balance>,
+        managerId: AccountId,
+        reserveId: AccountId,
+        freezeId: AccountId,
+        clawbackId: AccountId,
+        balances: Mapping<AccountId, Balance>,
         accounts_opted_in: Mapping<AccountId, bool>,
-        frozen_holders: Mapping<AccountId, u32>,
+        frozen_holders: Mapping<AccountId, bool>,
     }
 
     #[derive(Encode, Decode, Debug, PartialEq, Eq, Copy, Clone)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
-        NotManager,
-        NotReserve,
-        NotFreeze,
-        NotClawback,
+        NotManagerId,
+        NotReserveId,
+        NotFreezeId,
+        NotClawbackId,
         NotOptedIn,
         AlreadyOptedIn,
         NotFrozen,
-        Frozen,
+        NotFreezable,
+        AlreadyFrozen,
+        FrozenAccount,
         NotEnoughBalance,
         ZeroAmount,
     }
@@ -86,7 +88,7 @@ mod subsa {
         #[ink(topic)]
         account: AccountId,
         #[ink(topic)]
-        freeze_address: AccountId,
+        freeze_id: AccountId,
         #[ink(topic)]
         freeze: bool,
     }
@@ -175,11 +177,11 @@ mod subsa {
                 url,
                 metadata_hash,
                 asset_id: Self::env().account_id(),
-                manager: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                reserve: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                freeze: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                clawback: clawback.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                all_holders: Mapping::default(),
+                managerId: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                reserveId: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                freezeId: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                clawbackId: clawback.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                balances: Mapping::default(),
                 accounts_opted_in: Mapping::default(),
                 frozen_holders: Mapping::default(),
             }
@@ -191,7 +193,7 @@ mod subsa {
             let sender = self.env().caller();
 
             // check if sender has enough balance
-            let sender_balance = self.all_holders.get(&sender).unwrap_or(0);
+            let sender_balance = self.balances.get(&sender).unwrap_or(0);
             if sender_balance < amount {
                 return Err(Error::NotEnoughBalance);
             }
@@ -203,10 +205,10 @@ mod subsa {
             }
 
             // update sender and receiver balances
-            self.all_holders.insert(&sender, &(sender_balance - amount));
-            self.all_holders.insert(
+            self.balances.insert(&sender, &(sender_balance - amount));
+            self.balances.insert(
                 &receiver,
-                &(self.all_holders.get(&receiver).unwrap_or(0) + amount),
+                &(self.balances.get(&receiver).unwrap_or(0) + amount),
             );
 
             // emit transfer event
@@ -261,6 +263,41 @@ mod subsa {
             self.env().emit_event(OptOut {
                 asset_id: self.asset_id,
                 account: caller,
+            });
+
+            Ok(())
+        }
+
+        // Freeze an account
+        #[ink(message)]
+        pub fn freeze(&mut self, account: AccountId, freeze: bool) -> Result<(), Error> {
+            let caller = self.env().caller();
+
+            // check if token can be frozen
+            if !self.default_frozen {
+                return Err(Error::NotFreezable);
+            }
+
+            // check if caller is the freeze address
+            if caller != self.freezeId {
+                return Err(Error::NotFreezeId);
+            }
+
+            // check if account is already frozen
+            let account_frozen = self.frozen_holders.get(&account).unwrap_or(false);
+            if account_frozen {
+                return Err(Error::AlreadyFrozen);
+            }
+
+            // update account's frozen status
+            self.frozen_holders.insert(&account, &freeze);
+
+            // emit freeze event
+            self.env().emit_event(Freeze {
+                asset_id: self.asset_id,
+                account,
+                freeze,
+                freeze_id: self.freezeId,
             });
 
             Ok(())
