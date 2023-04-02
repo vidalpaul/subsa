@@ -44,6 +44,7 @@ mod subsa {
         NotFreeze,
         NotClawback,
         NotOptedIn,
+        AlreadyOptedIn,
         NotFrozen,
         Frozen,
         NotEnoughBalance,
@@ -214,6 +215,52 @@ mod subsa {
                 receiver,
                 asset_id: self.asset_id,
                 amount: Some(amount),
+            });
+
+            Ok(())
+        }
+
+        // OptIn to receive an asset
+        #[ink(message)]
+        pub fn opt_in(&mut self) -> Result<(), Error> {
+            let caller = self.env().caller();
+
+            // check if caller has already opted in
+            let caller_opted_in = self.accounts_opted_in.get(&caller).unwrap_or(false);
+            if caller_opted_in {
+                return Err(Error::AlreadyOptedIn);
+            }
+
+            // update caller's opt in status
+            self.accounts_opted_in.insert(&caller, &true);
+
+            // emit opt in event
+            self.env().emit_event(OptIn {
+                asset_id: self.asset_id,
+                account: caller,
+            });
+
+            Ok(())
+        }
+
+        // OptOut of receiving an asset
+        #[ink(message)]
+        pub fn opt_out(&mut self) -> Result<(), Error> {
+            let caller = self.env().caller();
+
+            // check if caller has opted in
+            let caller_opted_in = self.accounts_opted_in.get(&caller).unwrap_or(false);
+            if !caller_opted_in {
+                return Err(Error::NotOptedIn);
+            }
+
+            // update caller's opt in status
+            self.accounts_opted_in.insert(&caller, &false);
+
+            // emit opt out event
+            self.env().emit_event(OptOut {
+                asset_id: self.asset_id,
+                account: caller,
             });
 
             Ok(())
