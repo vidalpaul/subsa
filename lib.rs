@@ -50,6 +50,7 @@ mod subsa {
         AlreadyFrozen,
         FrozenAccount,
         NotEnoughBalance,
+        NotAllAssetsOwnedByManager,
         ZeroAmount,
     }
 
@@ -386,6 +387,34 @@ mod subsa {
             });
 
             Ok(())
+        }
+
+        // Destroy an asset
+        // Note: only the manager can destroy an asset
+        // Note: all asset holdings are transferred to the manager
+        #[ink(message)]
+        pub fn destroy_asset(&mut self) -> Result<(), Error> {
+            let caller = self.env().caller();
+
+            // check if caller is the manager
+            if caller != self.manager_id {
+                return Err(Error::NotManagerId);
+            }
+
+            // check if manager balance is equal to total supply
+            let manager_balance = self.balances.get(&self.manager_id).unwrap_or(0);
+            if manager_balance != self.total {
+                return Err(Error::NotAllAssetsOwnedByManager);
+            }
+
+            // emit destroy asset event
+            self.env().emit_event(Destruction {
+                asset_id: self.asset_id,
+                destroyer: self.manager_id,
+            });
+
+            // terminate contract
+            self.env().terminate_contract(self.manager_id);
         }
     }
 
