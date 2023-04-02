@@ -27,10 +27,10 @@ mod subsa {
         url: String,
         metadata_hash: [u8; 4],
         // mutable asset params
-        managerId: AccountId,
-        reserveId: AccountId,
-        freezeId: AccountId,
-        clawbackId: AccountId,
+        manager_id: AccountId,
+        reserve_id: AccountId,
+        freeze_id: AccountId,
+        clawback_id: AccountId,
         balances: Mapping<AccountId, Balance>,
         accounts_opted_in: Mapping<AccountId, bool>,
         frozen_holders: Mapping<AccountId, bool>,
@@ -136,7 +136,7 @@ mod subsa {
         #[ink(topic)]
         from: AccountId,
         #[ink(topic)]
-        clawback: AccountId,
+        clawback_id: AccountId,
         #[ink(topic)]
         amount: Option<Balance>,
     }
@@ -177,10 +177,10 @@ mod subsa {
                 url,
                 metadata_hash,
                 asset_id: Self::env().account_id(),
-                managerId: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                reserveId: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                freezeId: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                clawbackId: clawback.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                manager_id: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                reserve_id: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                freeze_id: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                clawback_id: clawback.unwrap_or_else(|| AccountId::from([0x0; 32])),
                 balances: Mapping::default(),
                 accounts_opted_in: Mapping::default(),
                 frozen_holders: Mapping::default(),
@@ -279,7 +279,7 @@ mod subsa {
             }
 
             // check if caller is the freeze address
-            if caller != self.freezeId {
+            if caller != self.freeze_id {
                 return Err(Error::NotFreezeId);
             }
 
@@ -297,7 +297,7 @@ mod subsa {
                 asset_id: self.asset_id,
                 account,
                 freeze,
-                freeze_id: self.freezeId,
+                freeze_id: self.freeze_id,
             });
 
             Ok(())
@@ -319,22 +319,70 @@ mod subsa {
             let caller = self.env().caller();
 
             // check if caller is the manager
-            if caller != self.managerId {
+            if caller != self.manager_id {
                 return Err(Error::NotManagerId);
             }
 
             // update asset params
-            self.managerId = manager.unwrap_or_else(|| AccountId::from([0x0; 32]));
-            self.reserveId = reserve.unwrap_or_else(|| AccountId::from([0x0; 32]));
-            self.freezeId = freeze.unwrap_or_else(|| AccountId::from([0x0; 32]));
-            self.clawbackId = clawback.unwrap_or_else(|| AccountId::from([0x0; 32]));
+            self.manager_id = manager.unwrap_or_else(|| AccountId::from([0x0; 32]));
+            self.reserve_id = reserve.unwrap_or_else(|| AccountId::from([0x0; 32]));
+            self.freeze_id = freeze.unwrap_or_else(|| AccountId::from([0x0; 32]));
+            self.clawback_id = clawback.unwrap_or_else(|| AccountId::from([0x0; 32]));
 
             // emit modify asset event
             self.env().emit_event(Modify {
-                manager_id: self.managerId,
-                reserve_id: self.reserveId,
-                freeze_id: self.freezeId,
-                clawback_id: self.clawbackId,
+                manager_id: self.manager_id,
+                reserve_id: self.reserve_id,
+                freeze_id: self.freeze_id,
+                clawback_id: self.clawback_id,
+            });
+
+            Ok(())
+        }
+
+        // Revoke an asset
+        // Note: only the clawback address can revoke an asset
+        // Note: must specify amount, revocation target id, and receiver
+        #[ink(message)]
+        pub fn revoke_asset(
+            &mut self,
+            receiver: AccountId,
+            recovation_target: AccountId,
+            amount: Balance,
+        ) -> Result<(), Error> {
+            let caller = self.env().caller();
+
+            // check if caller is the clawback address
+            if caller != self.clawback_id {
+                return Err(Error::NotClawbackId);
+            }
+
+            // check if receiver has opted in
+            let receiver_opted_in = self.accounts_opted_in.get(&receiver).unwrap_or(false);
+            if !receiver_opted_in {
+                return Err(Error::NotOptedIn);
+            }
+
+            // check if recovation target account has enough balance
+            let receiver_balance = self.balances.get(&receiver).unwrap_or(0);
+            if receiver_balance < amount {
+                return Err(Error::NotEnoughBalance);
+            }
+
+            // update recovation target balance
+            self.balances
+                .insert(&recovation_target, &(receiver_balance - amount));
+
+            // update receiver balance
+            self.balances
+                .insert(&receiver, &(receiver_balance + amount));
+
+            // emit revoke asset event
+            self.env().emit_event(Revoke {
+                asset_id: self.asset_id,
+                from: receiver,
+                amount: Some(amount),
+                clawback_id: self.clawback_id,
             });
 
             Ok(())
