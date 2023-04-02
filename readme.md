@@ -1,6 +1,6 @@
 # 💹 Substrate Standard Asset (SSA)
 
-SSA is a asset tokenization standard for Substrate, based on and aims to be fully compatible with the (ASA standard of Algorand)[https://developer.algorand.org/docs/get-details/asa/].
+SSA is an asset tokenization standard for Substrate, based on and aims to be fully compatible with the (ASA standard of Algorand)[https://developer.algorand.org/docs/get-details/asa/].
 
 ## ASA Specification
 
@@ -319,11 +319,11 @@ cargo test
 
 ### Testing in Rococo testnet
 
-Rococo is a testnet for Polkadot and Kusama parachains. We have a live testnet named Contracts as a parachain online there. You can test SSA contract on Contracts parachain.
+Rococo is a testnet for Polkadot and Kusama parachains. There's a live testnet named Contracts as a parachain online, where you can test the SSA contract.
 
 #### Steps
 
-1. Create an account. This can be done via command-line tools (e.g. subxt) or via a wallet (e.g. with the polkadot-js browser extension). See [here](https://wiki.polkadot.network/docs/learn-account-generation) for a detailed guide.
+1. Create an account. This can be done via command-line tools (e.g. `subxt`) or via a wallet (e.g. with the polkadot-js browser extension). See [here](https://wiki.polkadot.network/docs/learn-account-generation) for a detailed guide.
 
 2. Get some testnet tokens. You can get some testnet tokens from the [faucet](https://use.ink/faucet).
 
@@ -381,6 +381,12 @@ cargo contract instantiate --suri … --constructor new --args true
         }
 ```
 
+### Useful links
+
 - [Rococo testnet](hhttps://wiki.polkadot.network/docs/build-pdk#rococo-testnet)
 - [Testnet faucet](https://use.ink/faucet)
 - [Contract deployment](https://use.ink/testnet#3-deploy-your-contract)
+
+## Contributing
+
+We welcome contributions to this project. Please see our [Contributing Guidelines](CONTRIBUTING.md) for more information.

@@ -2,6 +2,7 @@
 
 use ink_lang as ink;
 
+// SSA smart contract
 #[ink::contract]
 mod ssa {
     use ink_storage::{traits::SpreadAllocate, Mapping};
@@ -72,6 +73,68 @@ mod ssa {
         creator: AccountId,
         #[ink(topic)]
         total: Balance,
+    }
+
+    /// Event emitted when an asset is frozen.
+    /// Note: only the freeze account can freeze an account.
+    #[ink(event)]
+    pub struct Freeze {
+        #[ink(topic)]
+        asset_id: AssetId,
+        #[ink(topic)]
+        account: AccountId,
+        #[ink(topic)]
+        freeze_address: AccountId,
+        #[ink(topic)]
+        freeze: bool,
+    }
+
+    /// Event emitted when an asset is reconfigured.
+    /// Note: only the manager can reconfigure an asset.
+    /// Note: the manager can change the reserve, freeze, and clawback addresses.
+    #[ink(event)]
+    pub struct Modify {
+        #[ink(topic)]
+        asset_id: AssetId,
+        #[ink(topic)]
+        reserve: AccountId,
+        #[ink(topic)]
+        freeze: AccountId,
+        #[ink(topic)]
+        clawback: AccountId,
+    }
+
+    /// Event emitted when an account opts in to receive an asset.
+    #[ink(event)]
+    pub struct OptIn {
+        #[ink(topic)]
+        asset_id: AssetId,
+        #[ink(topic)]
+        account: AccountId,
+    }
+
+    /// Event emitted when an account opts out of receiving an asset.
+    /// Note: only accounts that have opted in can opt out.
+    #[ink(event)]
+    pub struct OptOut {
+        #[ink(topic)]
+        asset_id: AssetId,
+        #[ink(topic)]
+        account: AccountId,
+    }
+
+    /// Event emitted when an asset is revoked.
+    /// Note: only the manager address can revoke an asset.
+    #[ink(event)]
+    pub struct Revoke {
+        #[ink(topic)]
+        asset_id: AssetId,
+        #[ink(topic)]
+        from: AccountId,
+        #[ink(topic)]
+        clawback: AccountId,
+        #[ink(topic)]
+        amount: Option<Balance>,
     }
 
     /// Event emitted when an asset is destroyed.
