@@ -675,5 +675,85 @@ mod subsa {
                 Some(true)
             );
         }
+
+        // Test if optIn emits OptIn event
+        #[ink::test]
+        fn opt_in_emits_opt_in_event() {
+            // set caller
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            let mut asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            asset.opt_in();
+            let events = ink_env::test::recorded_events().collect::<Vec<_>>();
+            assert_eq!(events.len(), 2);
+            let event = &events[1];
+            assert_eq!(event.topics.len(), 3);
+            // TODO TEST EVENT WITH Event as scale:Decode
+        }
+
+        // Test if optOut works
+        #[ink::test]
+        fn opt_out_works() {
+            // set caller
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            let mut asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            asset.opt_in();
+            asset.opt_out();
+            // check if caller account is opted in in accounts_opted_in map
+            assert_eq!(
+                asset.accounts_opted_in.get(&AccountId::from([0x0; 32])),
+                Some(false)
+            );
+        }
+
+        // Test if optOut emits OptOut event
+        #[ink::test]
+        fn opt_out_emits_opt_out_event() {
+            // set caller
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            let mut asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            asset.opt_in();
+            asset.opt_out();
+            let events = ink_env::test::recorded_events().collect::<Vec<_>>();
+            assert_eq!(events.len(), 3);
+            let event = &events[2];
+            assert_eq!(event.topics.len(), 3);
+            // TODO TEST EVENT WITH Event as scale:Decode
+        }
     }
 }
