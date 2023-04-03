@@ -188,6 +188,110 @@ mod subsa {
             }
         }
 
+        /// Returns the asset name.
+        #[ink(message)]
+        pub fn asset_name(&self) -> String {
+            self.asset_name.clone()
+        }
+
+        /// Returns the asset unit name.
+        #[ink(message)]
+        pub fn unit_name(&self) -> String {
+            self.unit_name.clone()
+        }
+
+        /// Returns the total supply of the asset.
+        #[ink(message)]
+        pub fn total(&self) -> Balance {
+            self.total
+        }
+
+        /// Returns the number of decimals used to display the asset.
+        #[ink(message)]
+        pub fn decimals(&self) -> u32 {
+            self.decimals
+        }
+
+        /// Returns whether the asset is frozen by default.
+        #[ink(message)]
+        pub fn default_frozen(&self) -> bool {
+            self.default_frozen
+        }
+
+        /// Returns the URL of the asset.
+        #[ink(message)]
+        pub fn url(&self) -> String {
+            self.url.clone()
+        }
+
+        /// Returns the metadata hash of the asset.
+        #[ink(message)]
+        pub fn metadata_hash(&self) -> [u8; 4] {
+            self.metadata_hash
+        }
+
+        /// Returns the asset ID.
+        /// Note: the asset ID is the address of the contract.
+        #[ink(message)]
+        pub fn asset_id(&self) -> AccountId {
+            self.asset_id
+        }
+
+        /// Returns the manager address.
+        #[ink(message)]
+        pub fn manager_id(&self) -> AccountId {
+            self.manager_id
+        }
+
+        /// Returns the reserve address.
+        #[ink(message)]
+        pub fn reserve_id(&self) -> AccountId {
+            self.reserve_id
+        }
+
+        /// Returns the freeze address.
+        #[ink(message)]
+        pub fn freeze_id(&self) -> AccountId {
+            self.freeze_id
+        }
+
+        /// Returns the clawback address.
+        #[ink(message)]
+        pub fn clawback_id(&self) -> AccountId {
+            self.clawback_id
+        }
+
+        /// Returns the balance of `account`.
+        /// Note: if the account has not opted in to this asset, NotOptedIn is returned.
+        #[ink(message)]
+        pub fn balance_of(&self, account: AccountId) -> Result<Balance, Error> {
+            let opted_in = self.accounts_opted_in.get(&account).unwrap_or(false);
+            if !opted_in {
+                return Err(Error::NotOptedIn);
+            }
+
+            Ok(self.balances.get(&account).unwrap_or(0))
+        }
+
+        /// Returns whether `account` is frozen.
+        #[ink(message)]
+        pub fn is_frozen(&self, account: AccountId) -> Result<bool, Error> {
+            Ok(self.frozen_holders.get(&account).unwrap_or(false))
+        }
+
+        /// Returns whether `account` has opted in to this asset.
+        #[ink(message)]
+        pub fn is_opted_in(&self, account: AccountId) -> Result<bool, Error> {
+            Ok(self.accounts_opted_in.get(&account).unwrap_or(false))
+        }
+
+        /// Returns wheter `creator's balance is equal to total supply.
+        /// Note: an asset can only be destroyed if the creator's balance is equal to the total supply.
+        #[ink(message)]
+        pub fn is_destroyable(&self) -> bool {
+            self.balances.get(&self.creator).unwrap_or(0) == self.total
+        }
+
         /// Transfer `amount` of tokens from `sender` to `receiver`.
         #[ink(message)]
         pub fn transfer(&mut self, receiver: AccountId, amount: Balance) -> Result<(), Error> {
