@@ -176,6 +176,16 @@ mod subsa {
                 total,
             });
 
+            // handle balance of creator and reserve address
+            // if reserve address is not provided, creator is the reserve address
+            let reserve_id = reserve.unwrap_or_else(|| Self::env().caller());
+
+            let mut accounts_opted_in = Mapping::default();
+            accounts_opted_in.insert(reserve_id, &true);
+
+            let mut balances = Mapping::default();
+            balances.insert(reserve_id, &total);
+
             // initialize asset params
             Self {
                 creator: Self::env().caller(),
@@ -187,11 +197,11 @@ mod subsa {
                 url,
                 metadata_hash,
                 manager_id: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                reserve_id: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
+                reserve_id,
                 freeze_id: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
                 clawback_id: clawback.unwrap_or_else(|| AccountId::from([0x0; 32])),
-                balances: Mapping::default(),
-                accounts_opted_in: Mapping::default(),
+                balances,
+                accounts_opted_in,
                 frozen_holders: Mapping::default(),
             }
         }
@@ -602,9 +612,10 @@ mod subsa {
             assert_eq!(asset.default_frozen(), true);
             assert_eq!(asset.url(), "www.test.com");
             assert_eq!(asset.manager_id(), AccountId::from([0x0; 32]));
-            assert_eq!(asset.reserve_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.reserve_id(), AccountId::from([0x1; 32]));
             assert_eq!(asset.freeze_id(), AccountId::from([0x0; 32]));
             assert_eq!(asset.clawback_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.balances.get(&asset.reserve_id()).unwrap_or(0), 1000);
         }
 
         // Test if asset_id field is set correctly in constructor to the contract address
@@ -668,10 +679,11 @@ mod subsa {
                 None,
                 None,
             );
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             // check if caller account is opted in in accounts_opted_in map
             assert_eq!(
-                asset.accounts_opted_in.get(&AccountId::from([0x0; 32])),
+                asset.accounts_opted_in.get(&AccountId::from([0x1; 32])),
                 Some(true)
             );
         }
@@ -694,6 +706,7 @@ mod subsa {
                 None,
                 None,
             );
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             let events = ink_env::test::recorded_events().collect::<Vec<_>>();
             assert_eq!(events.len(), 2);
@@ -720,11 +733,12 @@ mod subsa {
                 None,
                 None,
             );
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             asset.opt_out();
             // check if caller account is opted in in accounts_opted_in map
             assert_eq!(
-                asset.accounts_opted_in.get(&AccountId::from([0x0; 32])),
+                asset.accounts_opted_in.get(&AccountId::from([0x1; 32])),
                 Some(false)
             );
         }
@@ -747,6 +761,7 @@ mod subsa {
                 None,
                 None,
             );
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             asset.opt_out();
             let events = ink_env::test::recorded_events().collect::<Vec<_>>();
