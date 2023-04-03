@@ -1,11 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(type_ascription)]
 
 use ink_lang as ink;
 
 // subsa smart contract
 #[ink::contract]
 mod subsa {
-    use ink_storage::{traits::SpreadAllocate, Mapping};
+    use ink_storage::Mapping;
 
     use scale::{Decode, Encode};
 
@@ -17,7 +18,6 @@ mod subsa {
     #[ink(storage)]
     pub struct Subsa {
         // immutable asset params
-        asset_id: AssetId,
         creator: AccountId,
         asset_name: String,
         unit_name: String,
@@ -168,6 +168,15 @@ mod subsa {
             freeze: Option<AccountId>,
             clawback: Option<AccountId>,
         ) -> Self {
+            // emit creation event
+            Self::env().emit_event(Creation {
+                asset_id: Self::env().account_id(),
+                asset_name: asset_name.clone(),
+                creator: Self::env().caller(),
+                total,
+            });
+
+            // initialize asset params
             Self {
                 creator: Self::env().caller(),
                 asset_name,
@@ -177,7 +186,6 @@ mod subsa {
                 default_frozen,
                 url,
                 metadata_hash,
-                asset_id: Self::env().account_id(),
                 manager_id: manager.unwrap_or_else(|| AccountId::from([0x0; 32])),
                 reserve_id: reserve.unwrap_or_else(|| AccountId::from([0x0; 32])),
                 freeze_id: freeze.unwrap_or_else(|| AccountId::from([0x0; 32])),
@@ -234,7 +242,13 @@ mod subsa {
         /// Note: the asset ID is the address of the contract.
         #[ink(message)]
         pub fn asset_id(&self) -> AccountId {
-            self.asset_id
+            self.env().account_id()
+        }
+
+        // Returns the creator address.
+        #[ink(message)]
+        pub fn creator_id(&self) -> AccountId {
+            self.creator
         }
 
         /// Returns the manager address.
@@ -320,7 +334,7 @@ mod subsa {
             self.env().emit_event(Transfer {
                 sender,
                 receiver,
-                asset_id: self.asset_id,
+                asset_id: self.asset_id(),
                 amount: Some(amount),
             });
 
@@ -343,7 +357,7 @@ mod subsa {
 
             // emit opt in event
             self.env().emit_event(OptIn {
-                asset_id: self.asset_id,
+                asset_id: self.asset_id(),
                 account: caller,
             });
 
@@ -366,7 +380,7 @@ mod subsa {
 
             // emit opt out event
             self.env().emit_event(OptOut {
-                asset_id: self.asset_id,
+                asset_id: self.asset_id(),
                 account: caller,
             });
 
@@ -399,7 +413,7 @@ mod subsa {
 
             // emit freeze event
             self.env().emit_event(Freeze {
-                asset_id: self.asset_id,
+                asset_id: self.asset_id(),
                 account,
                 freeze,
                 freeze_id: self.freeze_id,
@@ -484,7 +498,7 @@ mod subsa {
 
             // emit revoke asset event
             self.env().emit_event(Revoke {
-                asset_id: self.asset_id,
+                asset_id: self.asset_id(),
                 from: receiver,
                 amount: Some(amount),
                 clawback_id: self.clawback_id,
@@ -513,7 +527,7 @@ mod subsa {
 
             // emit destroy asset event
             self.env().emit_event(Destruction {
-                asset_id: self.asset_id,
+                asset_id: self.asset_id(),
                 destroyer: self.manager_id,
             });
 
@@ -533,8 +547,133 @@ mod subsa {
         /// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
 
-        /// We test if the default constructor does its job.
+        use scale::Decode;
+
+        /// Test constructor and initial state
         #[ink::test]
-        fn default_works() {}
+        fn constructor_works() {
+            let asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                Some(AccountId::from([0x0; 32])),
+                Some(AccountId::from([0x0; 32])),
+                Some(AccountId::from([0x0; 32])),
+                Some(AccountId::from([0x0; 32])),
+            );
+
+            assert_eq!(asset.asset_name(), "Test subsa");
+            assert_eq!(asset.unit_name(), "TSSA");
+            assert_eq!(asset.total(), 1000);
+            assert_eq!(asset.decimals(), 10);
+            assert_eq!(asset.default_frozen(), true);
+            assert_eq!(asset.url(), "www.test.com");
+            assert_eq!(asset.manager_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.reserve_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.freeze_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.clawback_id(), AccountId::from([0x0; 32]));
+        }
+
+        // Test if constructor works with default values
+        #[ink::test]
+        fn constructor_works_with_default_values() {
+            let asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+
+            assert_eq!(asset.asset_name(), "Test subsa");
+            assert_eq!(asset.unit_name(), "TSSA");
+            assert_eq!(asset.total(), 1000);
+            assert_eq!(asset.decimals(), 10);
+            assert_eq!(asset.default_frozen(), true);
+            assert_eq!(asset.url(), "www.test.com");
+            assert_eq!(asset.manager_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.reserve_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.freeze_id(), AccountId::from([0x0; 32]));
+            assert_eq!(asset.clawback_id(), AccountId::from([0x0; 32]));
+        }
+
+        // Test if asset_id field is set correctly in constructor to the contract address
+        #[ink::test]
+        fn constructor_sets_asset_id() {
+            use ink_lang::codegen::Env;
+            let asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            assert_eq!(asset.asset_id(), asset.env().account_id());
+        }
+
+        // check if Create event is emitted in constructor
+        #[ink::test]
+        fn constructor_emits_create_event() {
+            let asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            let events = ink_env::test::recorded_events().collect::<Vec<_>>();
+            assert_eq!(events.len(), 1);
+            let event = &events[0];
+            assert_eq!(event.topics.len(), 5);
+            // TODO TEST EVENT WITH Event as scale:Decode
+        }
+
+        // Test if optIn works
+        #[ink::test]
+        fn opt_in_works() {
+            // set caller
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            let mut asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            asset.opt_in();
+            // check if caller account is opted in in accounts_opted_in map
+            assert_eq!(
+                asset.accounts_opted_in.get(&AccountId::from([0x0; 32])),
+                Some(true)
+            );
+        }
     }
 }
