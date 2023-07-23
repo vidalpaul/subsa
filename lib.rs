@@ -798,5 +798,26 @@ mod subsa {
             assert_eq!(event.topics.len(), 3);
             // TODO TEST EVENT WITH Event as scale:Decode
         }
+
+        #[ink::test]
+        fn opt_out_throws_not_opt_in_when_opt_out_without_opt_in() {
+            // set caller
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            let mut asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            assert_eq!(asset.opt_out(), Err(Error::NotOptedIn));
+        }
     }
 }
