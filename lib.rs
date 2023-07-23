@@ -557,8 +557,6 @@ mod subsa {
         /// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
 
-        use scale::Decode;
-
         /// Test constructor and initial state
         #[ink::test]
         fn constructor_works() {
@@ -715,6 +713,34 @@ mod subsa {
             // TODO TEST EVENT WITH Event as scale:Decode
         }
 
+        #[ink::test]
+        fn opt_in_throws_already_opt_in_if_already_opt_in() {
+            // set caller
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            let mut asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            asset.opt_in();
+            // check if caller account is opted in in accounts_opted_in map
+            assert_eq!(
+                asset.accounts_opted_in.get(&AccountId::from([0x1; 32])),
+                Some(true)
+            );
+            // check if optIn throws AlreadyOptedIn error
+            assert_eq!(asset.opt_in(), Err(Error::AlreadyOptedIn));
+        }
+
         // Test if optOut works
         #[ink::test]
         fn opt_out_works() {
@@ -769,6 +795,27 @@ mod subsa {
             let event = &events[2];
             assert_eq!(event.topics.len(), 3);
             // TODO TEST EVENT WITH Event as scale:Decode
+        }
+
+        #[ink::test]
+        fn opt_out_throws_not_opt_in_when_opt_out_without_opt_in() {
+            // set caller
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            let mut asset = Subsa::new(
+                "Test subsa".into(),
+                "TSSA".into(),
+                1000,
+                10,
+                true,
+                "www.test.com".into(),
+                [0x0; 4],
+                None,
+                None,
+                None,
+                None,
+            );
+            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            assert_eq!(asset.opt_out(), Err(Error::NotOptedIn));
         }
     }
 }
