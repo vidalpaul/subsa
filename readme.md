@@ -1,6 +1,6 @@
 # 💹 Substrate Standard Asset (subsa)
 
-subsa is an asset tokenization standard for Substrate, based on and aims to be fully compatible with the [ASA standard of Algorand[(https://developer.algorand.org/docs/get-details/asa/).
+subsa is an asset tokenization standard for Substrate, based on and aims to be fully compatible with the [ASA standard of Algorand](https://developer.algorand.org/docs/get-details/asa/).
 
 ## ASA Specification
 
