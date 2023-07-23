@@ -557,8 +557,6 @@ mod subsa {
         /// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
 
-        use scale::Decode;
-
         /// Test constructor and initial state
         #[ink::test]
         fn constructor_works() {
