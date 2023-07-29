@@ -1,8 +1,22 @@
+//! # Subsa
+//!
+//! This is an implementation of the Algorand Standard Asset (ASA) specification, for Substrate-based blockchains.
+//!
+//! subsa is an asset tokenization standard for Substrate, based on and aims to be fully compatible with the [ASA standard of Algorand](https://developer.algorand.org/docs/get-details/asa/).
+//!
+//! ## Warning
+//!
+//! This is a work in progress. Do not use in production.
+//!
+//! Overview of the ASA specification: https://developer.algorand.org/docs/features/asa/
+//!
+//! ## Docs
+//!
+//! Check readme for more information.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use ink;
-
-// subsa smart contract
+/// The subsa smart contract
 #[ink::contract]
 mod subsa {
     use ink::storage::Mapping;
@@ -12,11 +26,9 @@ mod subsa {
     pub type AssetId = AccountId;
 
     /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
     #[ink(storage)]
     pub struct Subsa {
-        // immutable asset params
+        // Immutable asset params ↓
         creator: AccountId,
         asset_name: String,
         unit_name: String,
@@ -25,7 +37,7 @@ mod subsa {
         default_frozen: bool,
         url: String,
         metadata_hash: [u8; 4],
-        // mutable asset params
+        // Mutable asset params ↓
         manager_id: AccountId,
         reserve_id: AccountId,
         freeze_id: AccountId,
@@ -35,6 +47,9 @@ mod subsa {
         frozen_holders: Mapping<AccountId, bool>,
     }
 
+    /// Errors
+
+    /// Error types
     #[derive(Encode, Decode, Debug, PartialEq, Eq, Copy, Clone)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
@@ -52,6 +67,8 @@ mod subsa {
         NotAllAssetsOwnedByManager,
         ZeroAmount,
     }
+
+    /// Events
 
     /// Event emitted when a token transfer occurs.
     #[ink(event)]
@@ -152,7 +169,9 @@ mod subsa {
         destroyer: AccountId,
     }
 
+    /// Implementation of the subsa smart contract
     impl Subsa {
+        // Creates a new asset.
         #[ink(constructor)]
         pub fn new(
             asset_name: String,
@@ -167,7 +186,7 @@ mod subsa {
             freeze: Option<AccountId>,
             clawback: Option<AccountId>,
         ) -> Self {
-            // emit creation event
+            // Emits creation event
             Self::env().emit_event(Creation {
                 asset_id: Self::env().account_id(),
                 asset_name: asset_name.clone(),
@@ -350,7 +369,7 @@ mod subsa {
             Ok(())
         }
 
-        // OptIn to receive an asset
+        /// OptIn to receive an asset
         #[ink(message)]
         pub fn opt_in(&mut self) -> Result<(), Error> {
             let caller = self.env().caller();
@@ -373,7 +392,7 @@ mod subsa {
             Ok(())
         }
 
-        // OptOut of receiving an asset
+        /// OptOut of receiving an asset
         #[ink(message)]
         pub fn opt_out(&mut self) -> Result<(), Error> {
             let caller = self.env().caller();
@@ -396,7 +415,7 @@ mod subsa {
             Ok(())
         }
 
-        // Freeze an account
+        /// Freeze an account
         #[ink(message)]
         pub fn freeze(&mut self, account: AccountId, freeze: bool) -> Result<(), Error> {
             let caller = self.env().caller();
@@ -431,7 +450,7 @@ mod subsa {
             Ok(())
         }
 
-        // Modify/Reconfigure an asset
+        /// Modify/Reconfigure an asset
         // Note: only the manager can modify an asset
         // Note: only mutable asset params can be modified
         // List of mutable asset params:
@@ -468,7 +487,7 @@ mod subsa {
             Ok(())
         }
 
-        // Revoke an asset
+        /// Revoke an asset
         // Note: only the clawback address can revoke an asset
         // Note: must specify amount, revocation target id, and receiver
         #[ink(message)]
@@ -516,7 +535,7 @@ mod subsa {
             Ok(())
         }
 
-        // Destroy an asset
+        /// Destroy an asset
         // Note: only the manager can destroy an asset
         // Note: all asset holdings are transferred to the manager
         #[ink(message)]
@@ -544,6 +563,8 @@ mod subsa {
             self.env().terminate_contract(self.manager_id);
         }
     }
+
+    /// Unit tests
 
     /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
     /// module and test functions are marked with a `#[test]` attribute.
