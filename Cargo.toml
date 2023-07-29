@@ -1,26 +1,21 @@
 [package]
 name = "ssa"
-version = "0.1.0"
-authors = ["[vidalpaul] <[your_email]>"]
+version = "0.1.1"
+authors = ["[vidalpaul]"]
 edition = "2021"
 
 [dependencies]
-ink_primitives = { version = "3.3", default-features = false }
-ink_metadata = { version = "3.3", default-features = false, features = ["derive"], optional = true }
+ink_primitives = { version = "4.2", default-features = false }
+ink_metadata = { version = "4.2", default-features = false, features = ["derive"], optional = true }
 ink_env = { version = "4.2", default-features = false }
-ink_storage = { version = "3.3", default-features = false }
-ink_lang = { version = "3.3", default-features = false }
+ink_storage = { version = "4.2", default-features = false }
+ink_lang = { version = "4.2", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
 [lib]
-name = "ssa"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-]
 
 [features]
 default = ["std"]
