@@ -8,7 +8,7 @@ subsa is an asset tokenization standard for Substrate, based on and aims to be f
 
 The ASA ID is a 64-bit unsigned integer. The ASA ID is used to identify the ASA in the Algorand network.
 
-Howver, in subsa, the token ID is of the [AccountId](https://docs.rs/ink_env/latest/ink_env/trait.Environment.html#associatedtype.AccountId) type.
+However, in subsa, the token ID is of the [AccountId](https://docs.rs/ink_env/latest/ink_env/trait.Environment.html#associatedtype.AccountId) type.
 
 ### ASA Parameters
 
