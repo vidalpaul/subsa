@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(type_ascription)]
 
-use ink_lang as ink;
+use ink;
 
 // subsa smart contract
 #[ink::contract]
 mod subsa {
-    use ink_storage::Mapping;
+    use ink::storage::Mapping;
 
     use scale::{Decode, Encode};
 
@@ -555,7 +554,7 @@ mod subsa {
         use super::*;
 
         /// Imports `ink_lang` so we can use `#[ink::test]`.
-        use ink_lang as ink;
+        use ink;
 
         /// Test constructor and initial state
         #[ink::test]
@@ -619,7 +618,7 @@ mod subsa {
         // Test if asset_id field is set correctly in constructor to the contract address
         #[ink::test]
         fn constructor_sets_asset_id() {
-            use ink_lang::codegen::Env;
+            use ink::codegen::Env;
             let asset = Subsa::new(
                 "Test subsa".into(),
                 "TSSA".into(),
@@ -652,7 +651,7 @@ mod subsa {
                 None,
                 None,
             );
-            let events = ink_env::test::recorded_events().collect::<Vec<_>>();
+            let events = ink::env::test::recorded_events().collect::<Vec<_>>();
             assert_eq!(events.len(), 1);
             let event = &events[0];
             assert_eq!(event.topics.len(), 5);
@@ -663,7 +662,7 @@ mod subsa {
         #[ink::test]
         fn opt_in_works() {
             // set caller
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x0; 32]));
             let mut asset = Subsa::new(
                 "Test subsa".into(),
                 "TSSA".into(),
@@ -677,7 +676,7 @@ mod subsa {
                 None,
                 None,
             );
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             // check if caller account is opted in in accounts_opted_in map
             assert_eq!(
@@ -690,7 +689,7 @@ mod subsa {
         #[ink::test]
         fn opt_in_emits_opt_in_event() {
             // set caller
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x0; 32]));
             let mut asset = Subsa::new(
                 "Test subsa".into(),
                 "TSSA".into(),
@@ -704,9 +703,9 @@ mod subsa {
                 None,
                 None,
             );
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
-            let events = ink_env::test::recorded_events().collect::<Vec<_>>();
+            let events = ink::env::test::recorded_events().collect::<Vec<_>>();
             assert_eq!(events.len(), 2);
             let event = &events[1];
             assert_eq!(event.topics.len(), 3);
@@ -716,7 +715,7 @@ mod subsa {
         #[ink::test]
         fn opt_in_throws_already_opt_in_if_already_opt_in() {
             // set caller
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x0; 32]));
             let mut asset = Subsa::new(
                 "Test subsa".into(),
                 "TSSA".into(),
@@ -730,7 +729,7 @@ mod subsa {
                 None,
                 None,
             );
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             // check if caller account is opted in in accounts_opted_in map
             assert_eq!(
@@ -745,7 +744,7 @@ mod subsa {
         #[ink::test]
         fn opt_out_works() {
             // set caller
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x0; 32]));
             let mut asset = Subsa::new(
                 "Test subsa".into(),
                 "TSSA".into(),
@@ -759,7 +758,7 @@ mod subsa {
                 None,
                 None,
             );
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             asset.opt_out();
             // check if caller account is opted in in accounts_opted_in map
@@ -773,7 +772,7 @@ mod subsa {
         #[ink::test]
         fn opt_out_emits_opt_out_event() {
             // set caller
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x0; 32]));
             let mut asset = Subsa::new(
                 "Test subsa".into(),
                 "TSSA".into(),
@@ -787,10 +786,10 @@ mod subsa {
                 None,
                 None,
             );
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             asset.opt_in();
             asset.opt_out();
-            let events = ink_env::test::recorded_events().collect::<Vec<_>>();
+            let events = ink::env::test::recorded_events().collect::<Vec<_>>();
             assert_eq!(events.len(), 3);
             let event = &events[2];
             assert_eq!(event.topics.len(), 3);
@@ -800,7 +799,7 @@ mod subsa {
         #[ink::test]
         fn opt_out_throws_not_opt_in_when_opt_out_without_opt_in() {
             // set caller
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x0; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x0; 32]));
             let mut asset = Subsa::new(
                 "Test subsa".into(),
                 "TSSA".into(),
@@ -814,7 +813,7 @@ mod subsa {
                 None,
                 None,
             );
-            ink_env::test::set_caller::<ink_env::DefaultEnvironment>(AccountId::from([0x1; 32]));
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(AccountId::from([0x1; 32]));
             assert_eq!(asset.opt_out(), Err(Error::NotOptedIn));
         }
     }

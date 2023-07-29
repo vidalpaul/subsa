@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        rust-channel: [ 'nightly' ]
+        rust-channel: [ 'stable' ]
 
     steps:
     - uses: actions/checkout@v3
